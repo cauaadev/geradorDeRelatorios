@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Gerador de Relatórios</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:       #F7F5F0;
+    --surface:  #FFFFFF;
+    --border:   #E4E0D8;
+    --text:     #1A1814;
+    --muted:    #7A756A;
+    --accent:   #2D5A3D;
+    --accent2:  #E8F0EA;
+    --danger:   #C0392B;
+    --radius:   10px;
+    --shadow:   0 2px 12px rgba(0,0,0,0.07);
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  header {
+    background: var(--accent);
+    padding: 20px 40px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  header h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px;
+    color: #fff;
+    letter-spacing: 0.3px;
+  }
+
+  header span { font-size: 22px; }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    min-height: calc(100vh - 64px);
+  }
+
+  nav {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 24px 0;
+  }
+
+  nav button {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 12px 24px;
+    background: none;
+    border: none;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: left;
+  }
+
+  nav button:hover { color: var(--accent); background: var(--accent2); }
+  nav button.ativo { color: var(--accent); background: var(--accent2); border-left: 3px solid var(--accent); }
+
+  main { padding: 32px 40px; }
+
+  section { display: none; }
+  section.ativa { display: block; }
+
+  h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 24px;
+    margin-bottom: 24px;
+    color: var(--text);
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow);
+  }
+
+  .card-title {
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--muted);
+    margin-bottom: 16px;
+  }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+
+  label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  input, select, textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    color: var(--text);
+    background: var(--bg);
+    outline: none;
+    transition: border 0.15s;
+  }
+
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--accent);
+    background: #fff;
+  }
+
+  .btn {
+    padding: 10px 22px;
+    border: none;
+    border-radius: 7px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #234a31; }
+  .btn-outline { background: none; border: 1px solid var(--border); color: var(--text); }
+  .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-danger  { background: none; border: 1px solid #f5c6c2; color: var(--danger); font-size: 12px; padding: 5px 10px; }
+  .btn-success { background: #1a6b3a; color: #fff; }
+  .btn-success:hover { background: #145430; }
+
+  .acoes { display: flex; gap: 10px; margin-top: 18px; align-items: center; }
+
+  .msg {
+    padding: 12px 16px;
+    border-radius: 7px;
+    font-size: 14px;
+    margin-bottom: 16px;
+    display: none;
+  }
+  .msg.ok  { background: #eaf5ee; color: #1a6b3a; border: 1px solid #b2d8bc; display: block; }
+  .msg.err { background: #fdf0ef; color: var(--danger); border: 1px solid #f5c6c2; display: block; }
+
+  /* ── Tabela ── */
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { padding: 10px 14px; text-align: left; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); border-bottom: 2px solid var(--border); }
+  td { padding: 12px 14px; border-bottom: 1px solid var(--border); }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--bg); }
+
+  /* ── Chips de pré-definidos ── */
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .chip {
+    padding: 6px 14px;
+    background: var(--accent2);
+    color: var(--accent);
+    border: 1px solid #b8d4bf;
+    border-radius: 20px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .chip:hover { background: var(--accent); color: #fff; }
+  .chip .del { font-size: 10px; opacity: 0.6; }
+
+  /* ── Calendário ── */
+  .cal-wrap { user-select: none; }
+  .cal-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .cal-nav button {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 12px;
+    cursor: pointer;
+    font-size: 16px;
+    color: var(--muted);
+    transition: all 0.15s;
+  }
+  .cal-nav button:hover { border-color: var(--accent); color: var(--accent); }
+  .cal-mes { font-weight: 600; font-size: 15px; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .cal-dow {
+    text-align: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    padding: 4px 0;
+  }
+  .cal-dia {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    border: 1px solid transparent;
+  }
+  .cal-dia:hover:not(.vazio):not(.outro-mes) { background: var(--accent2); border-color: #b8d4bf; }
+  .cal-dia.selecionado { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .cal-dia.hoje { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+  .cal-dia.outro-mes { color: #ccc; cursor: default; }
+  .cal-dia.vazio { cursor: default; }
+
+  .sessoes-lista { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 8px; }
+  .sessao-tag {
+    background: var(--accent2);
+    border: 1px solid #b8d4bf;
+    color: var(--accent);
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .sessao-tag button {
+    background: none;
+    border: none;
+    color: var(--danger);
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    padding: 0;
+  }
+
+  /* ── Horário ── */
+  .horario-row { display: flex; gap: 10px; align-items: flex-end; margin-top: 12px; }
+  .horario-row > div { flex: 1; }
+</style>
+</head>
+<body>
+
+<header>
+  <span>📋</span>
+  <h1>Gerador de Relatórios</h1>
+</header>
+
+<div class="layout">
+  <nav>
+    <button class="ativo" onclick="ir('relatorio', this)">📄 &nbsp;Relatório</button>
+    <button onclick="ir('psicologos', this)">👤 &nbsp;Psicólogos</button>
+    <button onclick="ir('pacientes', this)">🧑‍⚕️ &nbsp;Pacientes</button>
+  </nav>
+
+  <main>
+
+    <!-- ══════════════════ RELATÓRIO ══════════════════ -->
+    <section id="relatorio" class="ativa">
+      <h2>Gerar Relatório</h2>
+      <div id="msg-rel" class="msg"></div>
+
+      <!-- Psicólogo -->
+      <div class="card">
+        <div class="card-title">Psicólogo</div>
+        <div id="chips-psi" class="chips"></div>
+        <div class="grid-3">
+          <div><label>Nome</label><input id="r-psi-nome"/></div>
+          <div><label>Título</label><input id="r-psi-titulo"/></div>
+          <div><label>CRP</label><input id="r-psi-crp"/></div>
+          <div><label>CPF</label><input id="r-psi-cpf"/></div>
+          <div><label>Telefone</label><input id="r-psi-telefone" placeholder="(11) 91234-5678"/></div>
+          <div><label>Nome curto</label><input id="r-psi-nome_curto"/></div>
+          <div><label>Endereço</label><input id="r-psi-endereco"/></div>
+          <div><label>Bairro</label><input id="r-psi-bairro"/></div>
+          <div><label>Cidade</label><input id="r-psi-cidade"/></div>
+          <div><label>CEP</label><input id="r-psi-cep"/></div>
+        </div>
+      </div>
+
+      <!-- Paciente -->
+      <div class="card">
+        <div class="card-title">Paciente</div>
+        <div id="chips-pac" class="chips"></div>
+        <div class="grid-2">
+          <div><label>Nome</label><input id="r-pac-nome"/></div>
+          <div><label>Tipo de terapia</label><input id="r-pac-tipo_terapia"/></div>
+          <div><label>Diagnóstico</label><input id="r-pac-diagnostico"/></div>
+          <div><label>CID</label><input id="r-pac-cid"/></div>
+        </div>
+      </div>
+
+      <!-- Sessões com calendário -->
+      <div class="card">
+        <div class="card-title">Sessões</div>
+
+        <div class="grid-2">
+          <div class="cal-wrap">
+            <div class="cal-nav">
+              <button onclick="calNav(-1)">‹</button>
+              <span class="cal-mes" id="cal-titulo"></span>
+              <button onclick="calNav(1)">›</button>
+            </div>
+            <div class="cal-grid" id="cal-grid"></div>
+          </div>
+
+          <div>
+            <div class="horario-row">
+              <div><label>Horário início</label><input type="time" id="r-hora-inicio" value="09:00"/></div>
+              <div><label>Horário fim</label><input type="time" id="r-hora-fim" value="10:00"/></div>
+              <div><label>Nº sessões</label><input type="number" id="r-num-sessoes" value="1" min="1" style="max-width:80px"/></div>
+            </div>
+            <div class="sessoes-lista" id="sessoes-lista"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ano -->
+      <div class="card">
+        <div class="card-title">Configuração</div>
+        <div style="max-width:200px">
+          <label>Ano do relatório</label>
+          <input id="r-ano" value="2026"/>
+        </div>
+        <div class="acoes">
+          <button class="btn btn-success" onclick="gerarPdf()">⬇ Baixar PDF</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════ PSICÓLOGOS ══════════════════ -->
+    <section id="psicologos">
+      <h2>Psicólogos</h2>
+      <div id="msg-psi" class="msg"></div>
+
+      <div class="card">
+        <div class="card-title">Cadastrar psicólogo</div>
+        <div class="grid-3">
+          <div><label>Nome</label><input id="p-nome"/></div>
+          <div><label>Título</label><input id="p-titulo"/></div>
+          <div><label>CRP</label><input id="p-crp"/></div>
+          <div><label>CPF</label><input id="p-cpf"/></div>
+          <div><label>Telefone</label><input id="p-telefone" placeholder="(11) 91234-5678"/></div>
+          <div><label>Nome curto</label><input id="p-nome_curto"/></div>
+          <div><label>Endereço</label><input id="p-endereco"/></div>
+          <div><label>Bairro</label><input id="p-bairro"/></div>
+          <div><label>Cidade</label><input id="p-cidade"/></div>
+          <div><label>CEP</label><input id="p-cep"/></div>
+        </div>
+        <div class="acoes">
+          <button class="btn btn-primary" onclick="cadastrarPsicologo()">Salvar</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <table id="tabela-psi">
+          <thead><tr><th>ID</th><th>Nome</th><th>CRP</th><th>Telefone</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ══════════════════ PACIENTES ══════════════════ -->
+    <section id="pacientes">
+      <h2>Pacientes</h2>
+      <div id="msg-pac" class="msg"></div>
+
+      <div class="card">
+        <div class="card-title">Cadastrar paciente</div>
+        <div class="grid-2">
+          <div><label>Nome</label><input id="pc-nome"/></div>
+          <div><label>Tipo de terapia</label><input id="pc-tipo_terapia"/></div>
+          <div><label>Diagnóstico</label><input id="pc-diagnostico"/></div>
+          <div><label>CID</label><input id="pc-cid"/></div>
+        </div>
+        <div class="acoes">
+          <button class="btn btn-primary" onclick="cadastrarPaciente()">Salvar</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <table id="tabela-pac">
+          <thead><tr><th>ID</th><th>Nome</th><th>Diagnóstico</th><th>CID</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+// ── Navegação ─────────────────────────────────────────────────────────────────
+function ir(id, btn) {
+  document.querySelectorAll('section').forEach(s => s.classList.remove('ativa'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('ativo'));
+  document.getElementById(id).classList.add('ativa');
+  btn.classList.add('ativo');
+  if (id === 'relatorio')  { carregarChips(); }
+  if (id === 'psicologos') { carregarTabelaPsi(); }
+  if (id === 'pacientes')  { carregarTabelaPac(); }
+}
+
+// ── Mensagens ─────────────────────────────────────────────────────────────────
+function msg(id, texto, tipo) {
+  const el = document.getElementById(id);
+  el.textContent = texto;
+  el.className = `msg ${tipo}`;
+  setTimeout(() => el.className = 'msg', 4000);
+}
+
+function v(id) { return document.getElementById(id).value.trim(); }
+
+// ── Fetch ─────────────────────────────────────────────────────────────────────
+async function api(url, method = 'GET', body = null) {
+  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  if (body) opts.body = JSON.stringify(body);
+  const r = await fetch(url, opts);
+  return r;
+}
+
+// ── Calendário ────────────────────────────────────────────────────────────────
+let calData  = new Date();
+let sessoes  = [];
+const MESES  = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const DIAS   = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+const hoje   = new Date();
+
+function renderCal() {
+  const ano = calData.getFullYear();
+  const mes = calData.getMonth();
+  document.getElementById('cal-titulo').textContent = `${MESES[mes]} ${ano}`;
+
+  const grid = document.getElementById('cal-grid');
+  grid.innerHTML = DIAS.map(d => `<div class="cal-dow">${d}</div>`).join('');
+
+  const primeiro = new Date(ano, mes, 1).getDay();
+  const total    = new Date(ano, mes + 1, 0).getDate();
+
+  for (let i = 0; i < primeiro; i++) {
+    grid.innerHTML += `<div class="cal-dia vazio"></div>`;
+  }
+
+  for (let d = 1; d <= total; d++) {
+    const dataStr = `${String(d).padStart(2,'0')}/${String(mes+1).padStart(2,'0')}/${ano}`;
+    const isSel   = sessoes.some(s => s.data === dataStr);
+    const isHoje  = d === hoje.getDate() && mes === hoje.getMonth() && ano === hoje.getFullYear();
+    let cls = 'cal-dia';
+    if (isSel)  cls += ' selecionado';
+    if (isHoje && !isSel) cls += ' hoje';
+    grid.innerHTML += `<div class="${cls}" onclick="toggleData('${dataStr}')">${d}</div>`;
+  }
+}
+
+function calNav(dir) {
+  calData.setMonth(calData.getMonth() + dir);
+  renderCal();
+}
+
+function toggleData(dataStr) {
+  const idx = sessoes.findIndex(s => s.data === dataStr);
+  if (idx >= 0) {
+    sessoes.splice(idx, 1);
+  } else {
+    const inicio = v('r-hora-inicio') || '09:00';
+    const fim    = v('r-hora-fim')    || '10:00';
+    const num    = parseInt(v('r-num-sessoes')) || 1;
+    sessoes.push({ data: dataStr, horario: `${inicio}-${fim}`, num_sessoes: num });
+  }
+  renderCal();
+  renderSessoes();
+}
+
+function renderSessoes() {
+  const el = document.getElementById('sessoes-lista');
+  if (sessoes.length === 0) { el.innerHTML = '<span style="color:var(--muted);font-size:13px">Nenhuma sessão selecionada</span>'; return; }
+  el.innerHTML = sessoes.map((s, i) => `
+    <div class="sessao-tag">
+      📅 ${s.data} &nbsp;|&nbsp; ${s.horario} &nbsp;|&nbsp; ${s.num_sessoes} sessão(ões)
+      <button onclick="removerSessao(${i})">✕</button>
+    </div>
+  `).join('');
+}
+
+function removerSessao(i) {
+  sessoes.splice(i, 1);
+  renderCal();
+  renderSessoes();
+}
+
+// ── Chips pré-definidos ───────────────────────────────────────────────────────
+async function carregarChips() {
+  const [rpsi, rpac] = await Promise.all([
+    api('/psicologos').then(r => r.json()),
+    api('/pacientes').then(r => r.json()),
+  ]);
+
+  const elPsi = document.getElementById('chips-psi');
+  const elPac = document.getElementById('chips-pac');
+
+  elPsi.innerHTML = rpsi.length
+    ? rpsi.map(p => `<div class="chip" onclick="preencherPsi(${JSON.stringify(p).replace(/"/g,'&quot;')})">👤 ${p.nome}</div>`).join('')
+    : '<span style="color:var(--muted);font-size:13px">Nenhum psicólogo cadastrado</span>';
+
+  elPac.innerHTML = rpac.length
+    ? rpac.map(p => `<div class="chip" onclick="preencherPac(${JSON.stringify(p).replace(/"/g,'&quot;')})">🧑‍⚕️ ${p.nome}</div>`).join('')
+    : '<span style="color:var(--muted);font-size:13px">Nenhum paciente cadastrado</span>';
+}
+
+function preencherPsi(p) {
+  ['nome','titulo','crp','cpf','telefone','nome_curto','endereco','bairro','cidade','cep']
+    .forEach(c => { const el = document.getElementById(`r-psi-${c}`); if (el) el.value = p[c] || ''; });
+}
+
+function preencherPac(p) {
+  ['nome','tipo_terapia','diagnostico','cid']
+    .forEach(c => { const el = document.getElementById(`r-pac-${c}`); if (el) el.value = p[c] || ''; });
+}
+
+// ── Gerar PDF ─────────────────────────────────────────────────────────────────
+async function gerarPdf() {
+  if (sessoes.length === 0) { msg('msg-rel', 'Selecione ao menos uma sessão no calendário.', 'err'); return; }
+
+  const dados = {
+    ano: v('r-ano') || '2026',
+    psicologo: {
+      nome:       v('r-psi-nome'),
+      titulo:     v('r-psi-titulo'),
+      crp:        v('r-psi-crp'),
+      cpf:        v('r-psi-cpf'),
+      telefone:   v('r-psi-telefone'),
+      nome_curto: v('r-psi-nome_curto'),
+      endereco:   v('r-psi-endereco'),
+      bairro:     v('r-psi-bairro'),
+      cidade:     v('r-psi-cidade'),
+      cep:        v('r-psi-cep'),
+    },
+    paciente: {
+      nome:         v('r-pac-nome'),
+      tipo_terapia: v('r-pac-tipo_terapia'),
+      diagnostico:  v('r-pac-diagnostico'),
+      cid:          v('r-pac-cid'),
+    },
+    sessoes: sessoes,
+  };
+
+  try {
+    const r = await fetch('/gerar_pdf', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(dados),
+    });
+
+    if (!r.ok) {
+      const err = await r.json();
+      msg('msg-rel', err.error || 'Erro ao gerar PDF.', 'err');
+      return;
+    }
+
+    
+    const cd = r.headers.get('Content-Disposition');
+    const nomeArq  = cd ? cd.split('filename=')[1].replace(/"/g, '') : 'relatorio.pdf';
+    const blob = await r.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    console.log(cd)
+    a.download = nomeArq;
+    a.click();
+    URL.revokeObjectURL(url);
+    msg('msg-rel', 'PDF gerado com sucesso!', 'ok');
+  } catch(e) {
+    msg('msg-rel', 'Erro de conexão com o servidor.', 'err');
+  }
+}
+
+// ── Psicólogos ────────────────────────────────────────────────────────────────
+async function cadastrarPsicologo() {
+  const dados = {
+    nome: v('p-nome'), titulo: v('p-titulo'), crp: v('p-crp'), cpf: v('p-cpf'),
+    telefone: v('p-telefone'), nome_curto: v('p-nome_curto'), endereco: v('p-endereco'),
+    bairro: v('p-bairro'), cidade: v('p-cidade'), cep: v('p-cep'),
+  };
+  const r   = await api('/psicologos', 'POST', dados);
+  const res = await r.json();
+  if (res.error) { msg('msg-psi', res.error, 'err'); return; }
+  msg('msg-psi', 'Psicólogo cadastrado com sucesso!', 'ok');
+  ['nome','titulo','crp','cpf','telefone','nome_curto','endereco','bairro','cidade','cep']
+    .forEach(c => document.getElementById(`p-${c}`).value = '');
+  carregarTabelaPsi();
+}
+
+async function carregarTabelaPsi() {
+  const lista = await api('/psicologos').then(r => r.json());
+  document.querySelector('#tabela-psi tbody').innerHTML = lista.map(p => `
+    <tr>
+      <td>${p.id}</td><td>${p.nome}</td><td>${p.crp}</td><td>${p.telefone}</td>
+      <td><button class="btn btn-danger" onclick="deletarPsi(${p.id})">Remover</button></td>
+    </tr>`).join('') || '<tr><td colspan="5" style="color:var(--muted);text-align:center;padding:20px">Nenhum psicólogo cadastrado</td></tr>';
+}
+
+async function deletarPsi(id) {
+  if (!confirm('Remover psicólogo?')) return;
+  await api(`/psicologos/${id}`, 'DELETE');
+  carregarTabelaPsi();
+}
+
+// ── Pacientes ─────────────────────────────────────────────────────────────────
+async function cadastrarPaciente() {
+  const dados = {
+    nome: v('pc-nome'), tipo_terapia: v('pc-tipo_terapia'),
+    diagnostico: v('pc-diagnostico'), cid: v('pc-cid'),
+  };
+  const r   = await api('/pacientes', 'POST', dados);
+  const res = await r.json();
+  if (res.error) { msg('msg-pac', res.error, 'err'); return; }
+  msg('msg-pac', 'Paciente cadastrado com sucesso!', 'ok');
+  ['nome','tipo_terapia','diagnostico','cid'].forEach(c => document.getElementById(`pc-${c}`).value = '');
+  carregarTabelaPac();
+}
+
+async function carregarTabelaPac() {
+  const lista = await api('/pacientes').then(r => r.json());
+  document.querySelector('#tabela-pac tbody').innerHTML = lista.map(p => `
+    <tr>
+      <td>${p.id}</td><td>${p.nome}</td><td>${p.diagnostico}</td><td>${p.cid}</td>
+      <td><button class="btn btn-danger" onclick="deletarPac(${p.id})">Remover</button></td>
+    </tr>`).join('') || '<tr><td colspan="5" style="color:var(--muted);text-align:center;padding:20px">Nenhum paciente cadastrado</td></tr>';
+}
+
+async function deletarPac(id) {
+  if (!confirm('Remover paciente?')) return;
+  await api(`/pacientes/${id}`, 'DELETE');
+  carregarTabelaPac();
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+renderCal();
+renderSessoes();
+carregarChips();
+</script>
+</body>
+</html>
